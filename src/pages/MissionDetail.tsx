@@ -310,17 +310,16 @@ export default function MissionDetail() {
         <Card className="card-elevated p-5">
           <div className="flex flex-wrap gap-2 justify-end">
             {canEdit && <Button variant="outline" onClick={() => save()} disabled={busy}><Save className="w-4 h-4 ms-2" />حفظ</Button>}
-            {isOps && <Button onClick={() => transition("entered", "تم الإدخال")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للجوكر</Button>}
-            {isJoker && (<>
-              <Button variant="secondary" onClick={() => transition("reviewed", "تمت المراجعة")} disabled={busy}>تمت المراجعة</Button>
-              <Button onClick={() => transition("sent_to_supervisor", "تم الإرسال للمشرف")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للمشرف</Button>
-              <Button onClick={() => transition("sent_to_youth", "تم الإرسال للشباب")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للشباب</Button>
-            </>)}
-            {isSup && (<>
-              <Button variant="secondary" onClick={() => transition("reviewed", "تمت المراجعة")} disabled={busy}>تمت المراجعة</Button>
-              <Button onClick={() => transition("sent_to_youth", "تم الإرسال للشباب")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للشباب</Button>
-            </>)}
-            {isYouth && <Button onClick={() => transition("monitored", "تم الرصد")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال لغرفة العمليات (تم الرصد)</Button>}
+            {isOps && <Button onClick={() => transition("entered", "تم مراجعة الغرفة - أُرسلت للجوكر")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للجوكر</Button>}
+            {isJoker && (
+              <Button onClick={() => transition("reviewed", "تم مراجعة الجوكر - أُرسلت للشباب")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال لغرفة الشباب</Button>
+            )}
+            {isYouth && (
+              <Button onClick={() => transition("sent_to_youth", "تم مراجعة الشباب - أُرسلت للمشرف")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للمشرف</Button>
+            )}
+            {isSup && (
+              <Button onClick={() => transition("monitored", "تم اعتماد الاستمارة")} disabled={busy}><Send className="w-4 h-4 ms-2" />اعتماد الاستمارة</Button>
+            )}
           </div>
         </Card>
 
