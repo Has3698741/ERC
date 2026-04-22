@@ -369,3 +369,49 @@ function Info({ label, value }: { label: string; value: any }) {
     </div>
   );
 }
+
+const WORKFLOW_STEPS: { key: string; label: string }[] = [
+  { key: "coded", label: "الفريق" },
+  { key: "entered", label: "العمليات" },
+  { key: "reviewed", label: "الجوكر" },
+  { key: "sent_to_youth", label: "غرفة الشباب" },
+  { key: "monitored", label: "اعتماد المشرف" },
+];
+
+function WorkflowProgress({ status }: { status: string }) {
+  const currentIdx = WORKFLOW_STEPS.findIndex((s) => s.key === status);
+  return (
+    <Card className="card-elevated p-5">
+      <h3 className="font-bold mb-4 text-sm">مراحل الاستمارة</h3>
+      <div className="flex items-center justify-between gap-1" dir="rtl">
+        {WORKFLOW_STEPS.map((step, i) => {
+          const done = currentIdx >= i;
+          const active = currentIdx === i;
+          return (
+            <div key={step.key} className="flex items-center flex-1 last:flex-none">
+              <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+                <div
+                  className={
+                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors " +
+                    (done
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-muted text-muted-foreground border-border") +
+                    (active ? " ring-4 ring-primary/20" : "")
+                  }
+                >
+                  {i + 1}
+                </div>
+                <span className={"text-[11px] text-center " + (done ? "text-foreground font-medium" : "text-muted-foreground")}>
+                  {step.label}
+                </span>
+              </div>
+              {i < WORKFLOW_STEPS.length - 1 && (
+                <div className={"h-0.5 flex-1 mx-1 " + (currentIdx > i ? "bg-primary" : "bg-border")} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
