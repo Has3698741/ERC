@@ -61,26 +61,35 @@ export default function MissionDetail() {
 
   const save = async (extraPatch: any = {}) => {
     setBusy(true);
-    const patch = { ...extraPatch };
+    const patch: Record<string, any> = {};
     Object.keys(mission).forEach((k) => {
       if (!["id", "mission_code", "created_at", "updated_at", "created_by", "team_code"].includes(k)) {
         patch[k] = mission[k];
       }
     });
-    const { error } = await supabase.from("missions").update(patch).eq("id", mission.id);
+    Object.assign(patch, extraPatch);
+    const { error } = await supabase.from("missions").update(patch as any).eq("id", mission.id);
     setBusy(false);
-    if (error) toast.error(error.message); else toast.success("تم الحفظ");
-    load();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    await load();
+    toast.success("تم الحفظ");
   };
 
   const transition = async (newStatus: string, label: string) => {
     const stamp = new Date().toISOString();
     const stampField: Record<string, string> = {
-      entered: "ops_entered_at", reviewed: "reviewed_at",
-      sent_to_youth: "sent_to_youth_at", sent_to_supervisor: "sent_to_supervisor_at",
+      entered: "ops_entered_at",
+      reviewed: "reviewed_at",
+      sent_to_youth: "sent_to_youth_at",
+      sent_to_supervisor: "sent_to_supervisor_at",
       monitored: "monitored_at",
     };
-    await save({ status: newStatus, [stampField[newStatus] ?? "updated_at"]: stamp });
+    const nextPatch = { status: newStatus, [stampField[newStatus] ?? "updated_at"]: stamp };
+    setMission((current: any) => ({ ...current, ...nextPatch }));
+    await save(nextPatch);
     toast.success(label);
   };
 
