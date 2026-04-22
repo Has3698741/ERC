@@ -319,18 +319,25 @@ export default function MissionDetail() {
           </Card>
         )}
 
-        {/* Actions */}
+        {/* Workflow progress */}
+        <WorkflowProgress status={mission.status} />
+
+        {/* Actions — gated by current mission status so each role sees only its valid next step */}
         <Card className="card-elevated p-5">
           <div className="flex flex-wrap gap-2 justify-end">
-            {canEdit && <Button variant="outline" onClick={() => save()} disabled={busy}><Save className="w-4 h-4 ms-2" />حفظ</Button>}
-            {isOps && <Button onClick={() => transition("entered", "تم مراجعة العمليات - أُرسلت للجوكر")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للجوكر</Button>}
-            {isJoker && (
+            {canEdit && mission.status !== "monitored" && (
+              <Button variant="outline" onClick={() => save()} disabled={busy}><Save className="w-4 h-4 ms-2" />حفظ</Button>
+            )}
+            {isOps && mission.status === "coded" && (
+              <Button onClick={() => transition("entered", "تم مراجعة العمليات - أُرسلت للجوكر")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للجوكر</Button>
+            )}
+            {isJoker && mission.status === "entered" && (
               <Button onClick={() => transition("reviewed", "تم مراجعة الجوكر - أُرسلت للشباب")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال لغرفة الشباب</Button>
             )}
-            {isYouth && (
+            {isYouth && mission.status === "reviewed" && (
               <Button onClick={() => transition("sent_to_youth", "تم مراجعة الشباب - أُرسلت للمشرف")} disabled={busy}><Send className="w-4 h-4 ms-2" />إرسال للمشرف</Button>
             )}
-            {isSup && (
+            {isSup && mission.status === "sent_to_youth" && (
               <Button onClick={() => transition("monitored", "تم اعتماد الاستمارة")} disabled={busy}><Send className="w-4 h-4 ms-2" />اعتماد الاستمارة</Button>
             )}
           </div>
