@@ -68,7 +68,7 @@ export default function MissionDetail() {
       }
     });
     Object.assign(patch, extraPatch);
-    const { error } = await supabase.from("missions").update(patch).eq("id", mission.id);
+    const { error } = await supabase.from("missions").update(patch as any).eq("id", mission.id);
     setBusy(false);
     if (error) {
       toast.error(error.message);
