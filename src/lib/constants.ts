@@ -13,12 +13,12 @@ export type AppRole = keyof typeof ROLES;
 
 export const STATUS_LABELS: Record<string, string> = {
   planned: "مخطط لها",
-  coded: "تم التكويد الفوري",
-  entered: "تم الإدخال",
-  reviewed: "تم المراجعة",
-  sent_to_youth: "تم الإرسال للشباب",
+  coded: "تم التكويد من الفريق",
+  entered: "تم مراجعة الغرفة",
+  reviewed: "تم مراجعة الجوكر",
+  sent_to_youth: "تم مراجعة الشباب",
   sent_to_supervisor: "تم الإرسال للمشرف",
-  monitored: "تم الرصد",
+  monitored: "تم اعتماد الاستمارة",
 };
 
 export const STATUS_COLORS: Record<string, string> = {
@@ -26,7 +26,7 @@ export const STATUS_COLORS: Record<string, string> = {
   coded: "bg-info/15 text-info",
   entered: "bg-warning/15 text-warning",
   reviewed: "bg-primary/15 text-primary",
-  sent_to_youth: "bg-info/15 text-info",
+  sent_to_youth: "bg-accent/15 text-accent-foreground",
   sent_to_supervisor: "bg-info/15 text-info",
   monitored: "bg-success/15 text-success",
 };
