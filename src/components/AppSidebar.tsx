@@ -19,7 +19,7 @@ const items: NavItem[] = [
   { title: "الرئيسية", url: "/", icon: Home, roles: ["*"] },
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
   
-  // تم اعتماد الصفحة الجديدة كخيار أساسي وتنظيف القديمة بنجاح
+  // الصفحة الجديدة المعتمدة
   { title: "طلب إمداد بالمتطوعين", url: "/new-supply-request", icon: UserPlus, roles: ["*"] },
 
   { title: "غرفة العمليات", url: "/operations-room", icon: Radio, roles: ["operations_room", "operations_supervisor", "admin"] },
@@ -35,10 +35,17 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { roles, profile, signOut } = useAuth();
+  const { roles = [], profile, signOut } = useAuth(); // وضعنا قيمة افتراضية مصفوفة فارغة لحمايتها من الـ undefined
 
-  const visible = items.filter((it) => it.roles.includes("*") || it.roles.some((r) => roles.includes(r as AppRole)));
-  const primaryRole = roles[0];
+  // الفلترة المعدلة والمحمية: لو العنصر رول بتاعته "*" أو الرابط هو الصفحة الجديدة هيعدي فوراً بدون شروط معقدة
+  const visible = items.filter((it) => {
+    if (it.url === "/new-supply-request" || it.roles.includes("*")) {
+      return true;
+    }
+    return Array.isArray(roles) && it.roles.some((r) => roles.includes(r as AppRole));
+  });
+
+  const primaryRole = roles?.[0];
 
   return (
     <Sidebar collapsible="icon" side="right">
@@ -80,7 +87,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border p-3 space-y-2">
-        {!collapsed && primaryRole && (
+        {!collapsed && primaryRole && ROLES[primaryRole] && (
           <div className="text-xs text-sidebar-foreground/70 px-2">
             الدور: <span className="font-semibold text-sidebar-foreground">{ROLES[primaryRole]}</span>
           </div>
