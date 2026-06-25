@@ -26,7 +26,9 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" richColors closeButton />
-      <BrowserRouter>
+      {/* 👇 تعديل السطر ده بإضافة الـ basename عشان يحل مشكلة الـ Routing أونلاين */}
+
+    <BrowserRouter basename="/ERC/">
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
