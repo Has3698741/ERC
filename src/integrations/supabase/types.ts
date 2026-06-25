@@ -14,6 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
+      volunteer_supply_requests: {
+        Row: {
+          id: string
+          created_by: string
+          department_code: string
+          request_date: string
+          role_name: string
+          vol_count: number
+          start_date: string
+          hours_needed: string | null
+          duties: string | null
+          qualifications: string | null
+          skills: string | null
+          shift: string | null
+          travel_required: boolean
+          status: string
+          youth_notes: string | null
+          proposed_volunteers: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          created_by: string
+          department_code: string
+          request_date?: string
+          role_name: string
+          vol_count: number
+          start_date: string
+          hours_needed?: string | null
+          duties?: string | null
+          qualifications?: string | null
+          skills?: string | null
+          shift?: string | null
+          travel_required?: boolean
+          status?: string
+          youth_notes?: string | null
+          proposed_volunteers?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          created_by?: string
+          department_code?: string
+          request_date?: string
+          role_name?: string
+          vol_count?: number
+          start_date?: string
+          hours_needed?: string | null
+          duties?: string | null
+          qualifications?: string | null
+          skills?: string | null
+          shift?: string | null
+          travel_required?: boolean
+          status?: string
+          youth_notes?: string | null
+          proposed_volunteers?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      department_volunteers: {
+        Row: {
+          id: string
+          full_name: string
+          membership_number: string | null
+          branch: string | null
+          department_code: string
+          skills: string | null
+          qualifications: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          full_name: string
+          membership_number?: string | null
+          branch?: string | null
+          department_code: string
+          skills?: string | null
+          qualifications?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string
+          membership_number?: string | null
+          branch?: string | null
+          department_code?: string
+          skills?: string | null
+          qualifications?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
