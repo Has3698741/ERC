@@ -5,6 +5,8 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // 👇 السطر ده هو اللي هيحل مشكلة الصفحة البيضاء أونلاين
+  base: "/ops-core-link/", 
   server: {
     host: "::",
     port: 8080,
