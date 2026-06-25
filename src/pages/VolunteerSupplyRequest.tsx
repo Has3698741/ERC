@@ -107,14 +107,13 @@ export default function VolunteerSupplyRequest() {
     try {
       let query = supabase.from("volunteer_supply_requests").select("*").order("created_at", { ascending: false });
       
-      // If not youth room or admin, only see requests they created
       if (!isYouthRoom) {
         query = query.eq("created_by", user.id);
       }
       
       const { data, error } = await query;
       if (error) throw error;
-      setRequests((data || []) as VolunteerRequest[]);
+      setRequests((data || []) as unknown as VolunteerRequest[]);
     } catch (e: any) {
       toast.error("فشل في تحميل الطلبات: " + e.message);
     } finally {
@@ -150,6 +149,7 @@ export default function VolunteerSupplyRequest() {
       if (error) throw error;
       toast.success("تم إرسال طلب الإمداد بالمتطوعين بنجاح إلى إدارة الشباب");
       setView('list');
+      
       // Reset form
       setRoleName("");
       setVolCount(1);
@@ -180,7 +180,6 @@ export default function VolunteerSupplyRequest() {
     setProposedVols(proposedVols.map((v, i) => i === idx ? { ...v, [field]: val } : v));
   };
 
-  // Submit proposed volunteers from Youth Room
   const handleSendProposedVolunteers = async () => {
     if (!selectedRequest) return;
     const validVols = proposedVols.filter(v => v.full_name.trim());
@@ -193,7 +192,7 @@ export default function VolunteerSupplyRequest() {
     try {
       const { error } = await supabase.from("volunteer_supply_requests")
         .update({
-          proposed_volunteers: validVols,
+          proposed_volunteers: validVols as unknown as any,
           youth_notes: youthNotes,
           status: "proposed_by_youth"
         })
@@ -210,7 +209,6 @@ export default function VolunteerSupplyRequest() {
     }
   };
 
-  // Update interview status for proposed volunteer (Requesting Department side)
   const handleUpdateInterviewStatus = (idx: number, status: "accepted" | "rejected" | "pending") => {
     if (!selectedRequest) return;
     const updatedVols = selectedRequest.proposed_volunteers.map((v, i) => 
@@ -219,7 +217,6 @@ export default function VolunteerSupplyRequest() {
     setSelectedRequest({ ...selectedRequest, proposed_volunteers: updatedVols });
   };
 
-  // Update interview notes for proposed volunteer (Requesting Department side)
   const handleUpdateInterviewNotes = (idx: number, notes: string) => {
     if (!selectedRequest) return;
     const updatedVols = selectedRequest.proposed_volunteers.map((v, i) => 
@@ -228,11 +225,9 @@ export default function VolunteerSupplyRequest() {
     setSelectedRequest({ ...selectedRequest, proposed_volunteers: updatedVols });
   };
 
-  // Submit interview results from Requesting Department back to Youth Room
   const handleSubmitInterviewResults = async () => {
     if (!selectedRequest) return;
     
-    // Check if all proposed volunteers have an interview decision
     const hasPending = selectedRequest.proposed_volunteers.some(v => v.interview_status === "pending");
     if (hasPending) {
       if (!confirm("بعض المتطوعين لا يزالون معلقين. هل تريد إرسال النتائج على أي حال؟")) {
@@ -244,7 +239,7 @@ export default function VolunteerSupplyRequest() {
     try {
       const { error } = await supabase.from("volunteer_supply_requests")
         .update({
-          proposed_volunteers: selectedRequest.proposed_volunteers,
+          proposed_volunteers: selectedRequest.proposed_volunteers as unknown as any,
           status: "interviews_submitted"
         })
         .eq("id", selectedRequest.id);
@@ -260,27 +255,23 @@ export default function VolunteerSupplyRequest() {
     }
   };
 
-  // Final Approval by Youth Room (inserts accepted volunteers to department_volunteers)
   const handleFinalApprove = async () => {
     if (!selectedRequest) return;
     
     setSubmitting(true);
     try {
-      // 1. Get all accepted volunteers
       const acceptedVols = selectedRequest.proposed_volunteers.filter(v => v.interview_status === "accepted");
       
       if (acceptedVols.length > 0) {
-        // Prepare rows for department_volunteers
         const volRows = acceptedVols.map(v => ({
           full_name: v.full_name,
           membership_number: v.membership_number || null,
-          branch: "المركز العام", // default
+          branch: "المركز العام",
           department_code: selectedRequest.department_code,
           skills: selectedRequest.skills || null,
           qualifications: selectedRequest.qualifications || null
         }));
 
-        // Insert into department_volunteers
         const { error: insErr } = await supabase.from("department_volunteers").upsert(
           volRows, 
           { onConflict: "department_code, membership_number" }
@@ -288,7 +279,6 @@ export default function VolunteerSupplyRequest() {
         if (insErr) throw insErr;
       }
 
-      // 2. Update request status to 'approved'
       const { error: updErr } = await supabase.from("volunteer_supply_requests")
         .update({ status: "approved" })
         .eq("id", selectedRequest.id);
@@ -320,7 +310,6 @@ export default function VolunteerSupplyRequest() {
     <AppLayout title="طلب إمداد جديد بالمتطوعين">
       <div className="space-y-6 max-w-5xl mx-auto">
         
-        {/* Header navigation tabs */}
         <div className="flex justify-between items-center border-b border-border pb-4">
           <div>
             <h2 className="text-xl font-bold text-foreground">نموذج طلب إمداد بمتطوعين</h2>
@@ -409,7 +398,7 @@ export default function VolunteerSupplyRequest() {
                 <h3 className="font-bold text-lg text-primary">نموذج طلب إمداد بمتطوعين</h3>
                 <p className="text-xs text-muted-foreground">الهلال الأحمر المصري - إدارة الشباب وتطوير التطوع</p>
               </div>
-              <img src="/images/m1.png" width="70" className="object-contain" alt="ERC Logo" onError={(e)=>{e.currentTarget.style.display='none'}} />
+              <div className="bg-red-600 px-3 py-1.5 rounded-full font-bold text-xs text-white">ERC</div>
             </div>
 
             <form onSubmit={handleCreateRequest} className="space-y-6">
@@ -498,8 +487,6 @@ export default function VolunteerSupplyRequest() {
         {/* DETAIL VIEW */}
         {view === 'detail' && selectedRequest && (
           <div className="space-y-6">
-            
-            {/* Request Card info */}
             <Card className="card-elevated p-6 space-y-6">
               <div className="flex justify-between items-start border-b border-border pb-4">
                 <div>
@@ -521,7 +508,6 @@ export default function VolunteerSupplyRequest() {
                 </div>
               </div>
 
-              {/* Form Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                 <div className="space-y-1">
                   <div className="text-muted-foreground flex items-center gap-1.5"><Calendar className="w-4 h-4" /> تاريخ البداية</div>
@@ -555,7 +541,7 @@ export default function VolunteerSupplyRequest() {
               </div>
             </Card>
 
-            {/* YOUTH / ADMIN WORKSPACE FOR PENDING REQUEST */}
+            {/* YOUTH / ADMIN WORKSPACE */}
             {selectedRequest.status === "pending_youth" && isYouthRoom && (
               <Card className="card-elevated p-6 space-y-5 border-primary/20 bg-primary/5">
                 <h3 className="font-bold text-primary flex items-center gap-2">
@@ -565,16 +551,12 @@ export default function VolunteerSupplyRequest() {
                 <div className="space-y-4">
                   <div className="space-y-1.5">
                     <Label className="font-bold">ملاحظات إدارة الشباب</Label>
-                    <Textarea 
-                      placeholder="أدخل أي ملاحظات للإدارة الطالبة..." 
-                      value={youthNotes} 
-                      onChange={(e) => setYouthNotes(e.target.value)} 
-                    />
+                    <Textarea placeholder="أدخل أي ملاحظات للإدارة الطالبة..." value={youthNotes} onChange={(e) => setYouthNotes(e.target.value)} />
                   </div>
 
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <Label className="font-bold">قائمة المتطوعين المقترحين المقابلة (Excel/CVs)</Label>
+                      <Label className="font-bold">قائمة المتطوعين المقترحين للمقابلة</Label>
                       <Button size="sm" variant="outline" onClick={handleAddProposedVolRow}>
                         <Plus className="w-4 h-4 ml-1.5" /> إضافة متطوع مقترح
                       </Button>
@@ -584,25 +566,13 @@ export default function VolunteerSupplyRequest() {
                       {proposedVols.map((v, i) => (
                         <div key={i} className="flex gap-2 items-center p-3 rounded-lg border border-border bg-background">
                           <div className="flex-1">
-                            <Input 
-                              placeholder="الاسم الكامل للمتطوع" 
-                              value={v.full_name} 
-                              onChange={(e) => handleUpdateProposedVol(i, "full_name", e.target.value)} 
-                            />
+                            <Input placeholder="الاسم الكامل للمتطوع" value={v.full_name} onChange={(e) => handleUpdateProposedVol(i, "full_name", e.target.value)} />
                           </div>
                           <div className="w-1/4">
-                            <Input 
-                              placeholder="رقم العضوية" 
-                              value={v.membership_number} 
-                              onChange={(e) => handleUpdateProposedVol(i, "membership_number", e.target.value)} 
-                            />
+                            <Input placeholder="رقم العضوية" value={v.membership_number} onChange={(e) => handleUpdateProposedVol(i, "membership_number", e.target.value)} />
                           </div>
                           <div className="w-1/4">
-                            <Input 
-                              placeholder="رابط السيرة الذاتية (إن وجد)" 
-                              value={v.cv_url || ""} 
-                              onChange={(e) => handleUpdateProposedVol(i, "cv_url", e.target.value)} 
-                            />
+                            <Input placeholder="رابط الـ CV" value={v.cv_url || ""} onChange={(e) => handleUpdateProposedVol(i, "cv_url", e.target.value)} />
                           </div>
                           <Button size="icon" variant="ghost" onClick={() => handleRemoveProposedVolRow(i)} disabled={proposedVols.length === 1}>
                             <Trash2 className="w-4 h-4 text-destructive" />
@@ -621,16 +591,13 @@ export default function VolunteerSupplyRequest() {
               </Card>
             )}
 
-            {/* REQUESTER INTERVIEW WORKSPACE FOR PROPOSED VOLUNTEERS */}
+            {/* INTERVIEW WORKSPACE */}
             {selectedRequest.status === "proposed_by_youth" && (
               <Card className="card-elevated p-6 space-y-5 border-info/30 bg-info/5">
                 <div className="flex justify-between items-center border-b border-border pb-3">
                   <h3 className="font-bold text-info flex items-center gap-2">
                     <FileSpreadsheet className="w-5 h-5" /> مساحة عمل المقابلات الشخصية وتحديد المقبولين
                   </h3>
-                  <span className="text-xs bg-info/10 text-info border border-info/20 px-3 py-1 rounded-full font-semibold">
-                    المقابلات جارية
-                  </span>
                 </div>
 
                 {selectedRequest.youth_notes && (
@@ -641,10 +608,6 @@ export default function VolunteerSupplyRequest() {
                 )}
 
                 <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground">
-                    يرجى إجراء المقابلات للمتطوعين وتحديث حالة كل متطوع (مقبول / مرفوض) مع كتابة أي ملاحظات خاصة بالمقابلة.
-                  </p>
-
                   <div className="overflow-x-auto bg-background rounded-lg border border-border">
                     <Table>
                       <TableHeader>
@@ -663,9 +626,7 @@ export default function VolunteerSupplyRequest() {
                             <TableCell>{vol.membership_number || "—"}</TableCell>
                             <TableCell>
                               {vol.cv_url ? (
-                                <a href={vol.cv_url} target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
-                                  عرض السيرة الذاتية
-                                </a>
+                                <a href={vol.cv_url} target="_blank" rel="noreferrer" className="text-primary hover:underline">عرض الـ CV</a>
                               ) : "غير مرفق"}
                             </TableCell>
                             <TableCell>
@@ -673,7 +634,7 @@ export default function VolunteerSupplyRequest() {
                                 <Button 
                                   size="sm" 
                                   variant={vol.interview_status === "accepted" ? "default" : "outline"}
-                                  className={vol.interview_status === "accepted" ? "bg-success hover:bg-success/90 text-white" : ""}
+                                  className={vol.interview_status === "accepted" ? "bg-success text-white hover:bg-success/90" : ""}
                                   onClick={() => handleUpdateInterviewStatus(idx, "accepted")}
                                 >
                                   قبول
@@ -688,11 +649,7 @@ export default function VolunteerSupplyRequest() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                placeholder="اكتب ملاحظة المقابلة..." 
-                                value={vol.interview_notes || ""} 
-                                onChange={(e) => handleUpdateInterviewNotes(idx, e.target.value)} 
-                              />
+                              <Input placeholder="ملاحظات..." value={vol.interview_notes || ""} onChange={(e) => handleUpdateInterviewNotes(idx, e.target.value)} />
                             </TableCell>
                           </TableRow>
                         ))}
@@ -702,127 +659,32 @@ export default function VolunteerSupplyRequest() {
 
                   <div className="flex justify-end pt-3">
                     <Button onClick={handleSubmitInterviewResults} className="gradient-primary text-white" disabled={submitting}>
-                      <Send className="w-4 h-4 ml-2" /> إرسال نتائج المقابلات لإدارة الشباب
+                      <Send className="w-4 h-4 ml-2" /> تقديم نتائج المقابلات نهائياً
                     </Button>
                   </div>
                 </div>
               </Card>
             )}
 
-            {/* YOUTH / ADMIN WORKSPACE TO APPROVE FINAL SELECTIONS */}
+            {/* FINAL APPROVAL FOR YOUTH ROOM */}
             {selectedRequest.status === "interviews_submitted" && isYouthRoom && (
-              <Card className="card-elevated p-6 space-y-5 border-purple-500/20 bg-purple-500/5">
-                <div className="flex justify-between items-center border-b border-border pb-3">
-                  <h3 className="font-bold text-purple-600 flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5" /> مساحة عمل الاعتماد النهائي للمقابلات
-                  </h3>
-                  <span className="text-xs bg-purple-500/10 text-purple-600 border border-purple-500/20 px-3 py-1 rounded-full font-semibold">
-                    تم تقديم النتائج
-                  </span>
-                </div>
-
-                <div className="space-y-4">
-                  <p className="text-xs text-muted-foreground">
-                    هذه هي نتائج المقابلات التي تم إجراؤها من قبل الإدارة الطالبة. بعد اعتمادك، سيتم تسجيل المقبولين في قاعدة بيانات المتطوعين الخاصة بهم.
-                  </p>
-
-                  <div className="overflow-x-auto bg-background rounded-lg border border-border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>اسم المتطوع</TableHead>
-                          <TableHead>رقم العضوية</TableHead>
-                          <TableHead>قرار المقابلة</TableHead>
-                          <TableHead>ملاحظات المقابلة</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedRequest.proposed_volunteers?.map((vol, idx) => (
-                          <TableRow key={idx} className={vol.interview_status === "accepted" ? "bg-success/5" : vol.interview_status === "rejected" ? "bg-destructive/5" : ""}>
-                            <TableCell className="font-semibold">{vol.full_name}</TableCell>
-                            <TableCell>{vol.membership_number || "—"}</TableCell>
-                            <TableCell>
-                              <span className={`status-badge border ${
-                                vol.interview_status === "accepted" ? "bg-success/15 text-success border-success/20" : 
-                                vol.interview_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : 
-                                "bg-muted text-muted-foreground border-border"
-                              }`}>
-                                {vol.interview_status === "accepted" ? "مقبول" : vol.interview_status === "rejected" ? "مرفوض" : "معلق"}
-                              </span>
-                            </TableCell>
-                            <TableCell>{vol.interview_notes || "—"}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-
-                  <div className="flex justify-end pt-3">
-                    <Button onClick={handleFinalApprove} className="bg-success hover:bg-success/90 text-white" disabled={submitting}>
-                      <Check className="w-4 h-4 ml-2" /> {submitting ? "جاري الحفظ..." : "الاعتماد والقبول النهائي للمتطوعين"}
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            )}
-
-            {/* VOLUNTEER LISTING FOR COMPLETED / APPROVED REQUESTS */}
-            {selectedRequest.proposed_volunteers && selectedRequest.proposed_volunteers.length > 0 && 
-             ["interviews_submitted", "approved"].includes(selectedRequest.status) && (
-              <Card className="card-elevated p-6 space-y-4">
-                <h3 className="font-bold flex items-center gap-2">
-                  <Users className="w-5 h-5 text-success" /> المتطوعون المقبولون والمسجلون للطلب
+              <Card className="card-elevated p-6 space-y-4 border-purple-500/30 bg-purple-500/5">
+                <h3 className="font-bold text-purple-700 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5" /> اعتماد الطلب وإضافة المقبولين لقاعدة البيانات
                 </h3>
-                
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>الاسم</TableHead>
-                        <TableHead>رقم العضوية</TableHead>
-                        <TableHead>قرار المقابلة</TableHead>
-                        <TableHead>ملاحظات المقابلة</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {selectedRequest.proposed_volunteers.map((vol, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell className="font-semibold">{vol.full_name}</TableCell>
-                          <TableCell>{vol.membership_number || "—"}</TableCell>
-                          <TableCell>
-                            <span className={`status-badge border ${
-                              vol.interview_status === "accepted" ? "bg-success/15 text-success border-success/20" : 
-                              vol.interview_status === "rejected" ? "bg-destructive/15 text-destructive border-destructive/20" : 
-                              "bg-muted text-muted-foreground"
-                            }`}>
-                              {vol.interview_status === "accepted" ? "مقبول" : vol.interview_status === "rejected" ? "مرفوض" : "معلق"}
-                            </span>
-                          </TableCell>
-                          <TableCell>{vol.interview_notes || "—"}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <p className="text-xs text-muted-foreground">
+                  الإدارة الطالبة قامت بإنهاء المقابلات وتحديد المتطوعين المقبولين. اضغط على الزر أدناه لإتمام الطلب رسمياً ونقل المتطوعين لجدول الإدارة الطالبة.
+                </p>
+                <div className="flex justify-end">
+                  <Button onClick={handleFinalApprove} className="bg-purple-600 text-white hover:bg-purple-700" disabled={submitting}>
+                    <Check className="w-4 h-4 ml-2" /> اعتماد نهائي وإغلاق الطلب
+                  </Button>
                 </div>
-
-                {selectedRequest.status === "approved" && (
-                  <div className="flex items-center gap-2 p-4 bg-success/5 border border-success/20 rounded-xl text-success text-sm">
-                    <CheckCircle className="w-5 h-5 shrink-0" />
-                    <span>تم بنجاح ربط المتطوعين المقبولين بقاعدة بيانات متطوعي إدارة <strong>{selectedRequest.department_code}</strong>.</span>
-                  </div>
-                )}
               </Card>
             )}
 
-            {/* BACK TO LIST BUTTON */}
-            <div className="flex justify-end">
-              <Button variant="outline" onClick={() => setView('list')}>
-                عودة لقائمة الطلبات
-              </Button>
-            </div>
           </div>
         )}
-
       </div>
     </AppLayout>
   );

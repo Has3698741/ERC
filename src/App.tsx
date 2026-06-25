@@ -18,9 +18,8 @@ import DataManager from "./pages/DataManager.tsx";
 import Admin from "./pages/Admin.tsx";
 import MissionDetail from "./pages/MissionDetail.tsx";
 import VolunteerSupplyRequest from "./pages/VolunteerSupplyRequest.tsx";
-import NewSupplyRequest from "./pages/NewSupplyRequest"; // بدون .tsx// تم إضافة الاستيراد هنا بدقة
-// 2. جوه الـ <Routes> ضيف المسار الجديد
-<Route path="/new-supply-request" element={<NewSupplyRequest />} />
+import NewSupplyRequest from "./pages/NewSupplyRequest"; 
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -40,7 +39,7 @@ const App = () => (
             <Route path="/youth" element={<ProtectedRoute roles={["youth_room"]}><Youth /></ProtectedRoute>} />
             <Route path="/volunteer-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
             
-            {/* تم إضافة المسار الجديد هنا لحفظ نموذج طلب الإمداد بالكامل */}
+            {/* المسار الجديد لطلب الإمداد مأمن وصحيح هنا */}
             <Route path="/new-supply-request" element={<ProtectedRoute><NewSupplyRequest /></ProtectedRoute>} />
             
             <Route path="/dashboard" element={<ProtectedRoute roles={["stakeholder", "data_manager"]}><Dashboard /></ProtectedRoute>} />

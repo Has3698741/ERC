@@ -18,10 +18,9 @@ interface NavItem {
 const items: NavItem[] = [
   { title: "الرئيسية", url: "/", icon: Home, roles: ["*"] },
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
-  { title: "طلب إمداد بالمتطوعين", url: "/volunteer-supply-request", icon: UserPlus, roles: ["*"] },
   
-  // تم تعديل الصلاحية هنا لتصبح النجمة المفتوحة لضمان الظهور الفوري دون المساس بباقي السطور
-  { title: "نموذج طلب إمداد (الجديد)", url: "/new-supply-request", icon: FilePlus, roles: ["*"] },
+  // تم اعتماد الصفحة الجديدة كخيار أساسي وتنظيف القديمة بنجاح
+  { title: "طلب إمداد بالمتطوعين", url: "/new-supply-request", icon: UserPlus, roles: ["*"] },
 
   { title: "غرفة العمليات", url: "/operations-room", icon: Radio, roles: ["operations_room", "operations_supervisor", "admin"] },
   { title: "الجوكر", url: "/joker", icon: Sparkles, roles: ["joker", "admin"] },
