@@ -18,7 +18,6 @@ import DataManager from "./pages/DataManager.tsx";
 import Admin from "./pages/Admin.tsx";
 import MissionDetail from "./pages/MissionDetail.tsx";
 import VolunteerSupplyRequest from "./pages/VolunteerSupplyRequest.tsx";
-import NewSupplyRequest from "./pages/NewSupplyRequest"; 
 
 const queryClient = new QueryClient();
 
@@ -37,10 +36,12 @@ const App = () => (
             <Route path="/joker" element={<ProtectedRoute roles={["joker"]}><Joker /></ProtectedRoute>} />
             <Route path="/supervisor" element={<ProtectedRoute roles={["operations_supervisor"]}><Supervisor /></ProtectedRoute>} />
             <Route path="/youth" element={<ProtectedRoute roles={["youth_room"]}><Youth /></ProtectedRoute>} />
+            
+            {/* السيستم المتكامل لطلب الإمداد ومتابعة الحالات والمقابلات */}
             <Route path="/volunteer-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
             
-            {/* المسار الجديد لطلب الإمداد مأمن وصحيح هنا */}
-            <Route path="/new-supply-request" element={<ProtectedRoute><NewSupplyRequest /></ProtectedRoute>} />
+            {/* توجيه الرابط القديم لنفس الصفحة الجديدة عشان لو في زرار في الـ Sidebar أو أي مكان بيفتح الرابط ده ما يضربش خطأ */}
+            <Route path="/new-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
             
             <Route path="/dashboard" element={<ProtectedRoute roles={["stakeholder", "data_manager"]}><Dashboard /></ProtectedRoute>} />
             <Route path="/data-manager" element={<ProtectedRoute roles={["data_manager"]}><DataManager /></ProtectedRoute>} />
