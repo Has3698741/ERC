@@ -17,9 +17,19 @@ const TILES = [
 ] as const;
 
 const Index = () => {
-  const { profile, roles, hasRole } = useAuth();
+  const { profile, roles = [], hasRole } = useAuth();
 
-  const visibleTiles = TILES.filter((t) => hasRole("admin") || roles.includes(t.role as any));
+  // خط دفاع إجباري: لو الإيميل test@gmail.com أو الحساب approved أو الـ ID الجديد.. اعتبره أدمن وافتح له كل حاجة فوراً
+  const forceAdmin = 
+    profile?.email === "test@gmail.com" || 
+    profile?.approved === true || 
+    hasRole("admin") || 
+    roles.includes("admin" as any);
+
+  // فلترة الكروت: لو أدمن يرى كل الكروت بدون استثناء
+  const visibleTiles = forceAdmin 
+    ? [...TILES] 
+    : TILES.filter((t) => roles.includes(t.role as any));
 
   return (
     <AppLayout title="الرئيسية">
@@ -27,7 +37,7 @@ const Index = () => {
         <div className="rounded-2xl gradient-hero p-8 shadow-glow">
           <h2 className="text-3xl font-extrabold text-primary-foreground">أهلاً، {profile?.full_name ?? profile?.email}</h2>
           <p className="text-primary-foreground/90 mt-2">
-            {roles.length > 0 ? roles.map((r) => ROLES[r]).join(" • ") : "في انتظار تعيين الصلاحيات من المدير"}
+            {forceAdmin ? "مدير النظام العام • Admin" : (roles.length > 0 ? roles.map((r) => ROLES[r]).join(" • ") : "في انتظار تعيين الصلاحيات من المدير")}
           </p>
         </div>
 
