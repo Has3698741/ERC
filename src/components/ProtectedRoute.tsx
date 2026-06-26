@@ -4,16 +4,20 @@ import type { AppRole } from "@/lib/constants";
 import { Loader2 } from "lucide-react";
 
 export function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles?: AppRole[] }) {
-  const { user, loading, roles: userRoles, profile, hasRole } = useAuth();
+  const { user, loading, roles: userRoles = [], profile, hasRole } = useAuth();
   const location = useLocation();
 
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
+  
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
 
-  // Awaiting approval: only admin bypass
-  if (profile && !profile.approved && !hasRole("admin")) {
+  // فحص صريح ومباشر: لو المستخدم معاه دور admin يتخطى كل القيود والمراجعات فوراً
+  const isAdmin = hasRole("admin") || userRoles.includes("admin" as AppRole);
+
+  // Awaiting approval: يتأثر فقط لو المستخدم مش أدمن
+  if (profile && !profile.approved && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center space-y-3 max-w-md">
@@ -24,8 +28,9 @@ export function ProtectedRoute({ children, roles }: { children: React.ReactNode;
     );
   }
 
-  if (roles && !roles.some((r) => userRoles.includes(r)) && !hasRole("admin")) {
+  if (roles && !roles.some((r) => userRoles.includes(r)) && !isAdmin) {
     return <Navigate to="/" replace />;
   }
+  
   return <>{children}</>;
 }
