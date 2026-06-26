@@ -13,10 +13,10 @@ export function ProtectedRoute({ children, roles }: { children: React.ReactNode;
   
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
 
-  // فحص صريح ومباشر: لو المستخدم معاه دور admin يتخطى كل القيود والمراجعات فوراً
+  // خط الدفاع الأول: لو الحساب واخد أدمن في المصفوفة يتخطى أي مراجعة فوراً
   const isAdmin = hasRole("admin") || userRoles.includes("admin" as AppRole);
 
-  // Awaiting approval: يتأثر فقط لو المستخدم مش أدمن
+  // شاشة المراجعة تظهر فقط لو المستخدم مش أدمن وحسابه مش مفعّل
   if (profile && !profile.approved && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
