@@ -20,8 +20,7 @@ const items: NavItem[] = [
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
   
   // الصفحة الجديدة المعتمدة
-  { title: "طلب إمداد بالمتطوعين", url: "/new-supply-request", icon: UserPlus, roles: ["*"] },
-
+  { title: "طلب إمداد بالمتطوعين", url: "/volunteer-supply-request", icon: UserPlus, roles: ["*"] },
   { title: "غرفة العمليات", url: "/operations-room", icon: Radio, roles: ["operations_room", "operations_supervisor", "admin"] },
   { title: "الجوكر", url: "/joker", icon: Sparkles, roles: ["joker", "admin"] },
   { title: "مشرف غرفة العمليات", url: "/supervisor", icon: ShieldCheck, roles: ["operations_supervisor", "admin"] },
@@ -37,9 +36,9 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles = [], profile, signOut } = useAuth(); // وضعنا قيمة افتراضية مصفوفة فارغة لحمايتها من الـ undefined
 
-  // الفلترة المعدلة والمحمية: لو العنصر رول بتاعته "*" أو الرابط هو الصفحة الجديدة هيعدي فوراً بدون شروط معقدة
+  // 👇 تحديث الفلترة: تم تغيير الرابط لـ /volunteer-supply-request ليطابق الـ items فوق بالظبط
   const visible = items.filter((it) => {
-    if (it.url === "/new-supply-request" || it.roles.includes("*")) {
+    if (it.url === "/volunteer-supply-request" || it.roles.includes("*")) {
       return true;
     }
     return Array.isArray(roles) && it.roles.some((r) => roles.includes(r as AppRole));
