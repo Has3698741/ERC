@@ -26,9 +26,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" richColors closeButton />
-      {/* 👇 تعديل السطر ده بإضافة الـ basename عشان يحل مشكلة الـ Routing أونلاين */}
-
-    <BrowserRouter basename="/ERC/">
+      {/* سيبناها BrowserRouter عادية بدون basename عشان الـ HashRouter أونلاين يلقط المسار صح */}
+      <BrowserRouter>
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
@@ -41,8 +40,6 @@ const App = () => (
             
             {/* السيستم المتكامل لطلب الإمداد ومتابعة الحالات والمقابلات */}
             <Route path="/volunteer-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
-            
-            {/* توجيه الرابط القديم لنفس الصفحة الجديدة عشان لو في زرار في الـ Sidebar أو أي مكان بيفتح الرابط ده ما يضربش خطأ */}
             <Route path="/new-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
             
             <Route path="/dashboard" element={<ProtectedRoute roles={["stakeholder", "data_manager"]}><Dashboard /></ProtectedRoute>} />
