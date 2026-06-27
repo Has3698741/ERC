@@ -396,7 +396,7 @@ export default function VolunteerSupplyRequest() {
             <div className="flex justify-between items-center border-b border-border pb-4 mb-6">
               <div>
                 <h3 className="font-bold text-lg text-primary">نموذج طلب إمداد بمتطوعين</h3>
-                <p className="text-xs text-muted-foreground">الهلال الأحمر المصري - إدارة الشباب وتطوير التطوع</p>
+                <p className="text-xs text-muted-foreground">الهلال الأحمر المصري - إدارة الشباب وتنمية التطوع</p>
               </div>
               <div className="bg-red-600 px-3 py-1.5 rounded-full font-bold text-xs text-white">ERC</div>
             </div>
