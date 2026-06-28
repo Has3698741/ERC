@@ -132,7 +132,7 @@ export default function VolunteerSupplyRequest() {
     try {
       const { error } = await supabase.from("volunteer_supply_requests").insert({
         created_by: user.id,
-        department_code: departmentCode || "غير محدد",
+        department_code: departmentCode || "غير مححدد",
         request_date: requestDate,
         role_name: roleName,
         vol_count: volCount,
@@ -477,7 +477,7 @@ export default function VolunteerSupplyRequest() {
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setView('list')}>إلغاء</Button>
                 <Button type="submit" className="gradient-primary text-white px-8" disabled={submitting}>
-                  <Send className="w-4 h-4 ml-2" /> {submitting ? "جاري الإرسال..." : "إرسال الطلب للأدمن"}
+                  <Send className="w-4 h-4 ml-2" /> {submitting ? "جاري الإرسال..." : "إرسال الطلب لإدارة الشباب"}
                 </Button>
               </div>
             </form>
