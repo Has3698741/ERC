@@ -70,8 +70,8 @@ export default function VolunteerSupplyRequest() {
 
   // View state: 'list' | 'create' | 'detail'
   const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
-  const [requests, setRequests] = useState<VolunteerRequest[]>([]);
-  const [selectedRequest, setSelectedRequest] = useState<VolunteerRequest | null>(null);
+  const [requests, setRequests] = useState<VolunteerSupplyRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<VolunteerSupplyRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -113,7 +113,7 @@ export default function VolunteerSupplyRequest() {
       
       const { data, error } = await query;
       if (error) throw error;
-      setRequests((data || []) as unknown as VolunteerRequest[]);
+      setRequests((data || []) as unknown as VolunteerSupply[]);
     } catch (e: any) {
       toast.error("فشل في تحميل الطلبات: " + e.message);
     } finally {
