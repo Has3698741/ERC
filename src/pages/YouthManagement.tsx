@@ -4,25 +4,27 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Link2, Copy, CheckCircle2, Clock, Users, Eye, FileText, Check, X } from "lucide-react";
+import { Loader2, Link2, Copy, CheckCircle2, Clock, Users, Eye, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface VolunteerRequest {
   id: string;
-  role_name: string;
-  department_code: string;
-  vol_count: number;
-  status?: string;
+  role_title: string;
+  required_count: number;
+  status: string;
   created_at?: string;
 }
 
 interface Applicant {
   id: string;
-  full_name: string;
-  phone: string;
-  email: string;
-  cv_url: string;
-  skills_match: string;
+  form_id: string;
+  applicant_data: {
+    fullName?: string;
+    phone?: string;
+    email?: string;
+    skills?: string;
+    cvUrl?: string;
+  };
   youth_status: string;
 }
 
@@ -32,19 +34,19 @@ export default function YouthManagement() {
   const [loading, setLoading] = useState(true);
   const [applicantsLoading, setApplicantsLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<VolunteerRequest | null>(null);
+  const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("volunteer_supply_requests")
-        .select(`id, role_name, department_code, vol_count, status, created_at`)
+        .from("volunteer_supply_requests" as any)
+        .select(`id, role_title, required_count, status, created_at`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setRequests(data || []);
+      setRequests((data as any) || []);
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطأ في جلب البيانات", description: error.message });
     } finally {
@@ -55,14 +57,31 @@ export default function YouthManagement() {
   const fetchApplicants = async (requestId: string) => {
     try {
       setApplicantsLoading(true);
-      const { data, error } = await supabase
-        .from("volunteer_applicants" as any)
-        .select("*")
-        .eq("request_id", requestId);
+      
+      // جلب الـ form_id مع عمل تحويل صريح للنوع لتخطي الـ cache error
+      const { data, error: formError } = await supabase
+        .from("supply_request_forms" as any)
+        .select("id")
+        .eq("request_id", requestId)
+        .maybeSingle();
 
-      if (error) throw error;
-      // عمل Type Cast هنا لحل مشكلة السوبابيز كومبيلر
-      setApplicants((data as any) || []);
+      const formData = data as any;
+
+      if (formError || !formData) {
+        setApplicants([]);
+        return;
+      }
+
+      setSelectedFormId(formData.id);
+
+      // جلب المتقدمين بناءً على الـ form_id
+      const { data: appData, error: appError } = await supabase
+        .from("supply_request_applicants" as any)
+        .select("*")
+        .eq("form_id", formData.id);
+
+      if (appError) throw appError;
+      setApplicants((appData as any) || []);
     } catch (error: any) {
       toast({ variant: "destructive", title: "خطأ في جلب المتقدمين", description: error.message });
     } finally {
@@ -77,18 +96,23 @@ export default function YouthManagement() {
   const handleCreateLink = async (requestId: string) => {
     try {
       setActionLoading(requestId);
-      const randomId = Math.floor(1000 + Math.random() * 9000);
-      const generatedCode = `ERC-VOL-${requestId.substring(0, 4)}-${randomId}`;
+      const generatedUuid = crypto.randomUUID();
 
       const { error: linkError } = await supabase
-        .from("volunteer_supply_requests" as any)
-        .update({ status: "link_generated" })
-        .eq("id", requestId);
+        .from("supply_request_forms" as any)
+        .insert([{ request_id: requestId, public_link_uuid: generatedUuid, is_active: true }]);
 
       if (linkError) throw linkError;
-      localStorage.setItem(`link_${requestId}`, generatedCode);
 
-      toast({ title: "تم توليد الرابط بنجاح" });
+      const { error: updateError } = await supabase
+        .from("volunteer_supply_requests" as any)
+        .update({ status: "approved" })
+        .eq("id", requestId);
+
+      if (updateError) throw updateError;
+
+      localStorage.setItem(`form_uuid_${requestId}`, generatedUuid);
+      toast({ title: "تم توليد رابط الاستمارة بنجاح" });
       await fetchRequests();
     } catch (error: any) {
       toast({ variant: "destructive", title: "فشل توليد الرابط", description: error.message });
@@ -97,44 +121,31 @@ export default function YouthManagement() {
     }
   };
 
-  const handleStatusChange = async (applicantId: string, newStatus: 'short_listed' | 'rejected_by_youth') => {
+  const handleStatusChange = async (applicantId: string, newStatus: string) => {
     try {
       const { error } = await supabase
-        .from("volunteer_applicants" as any)
+        .from("supply_request_applicants" as any)
         .update({ youth_status: newStatus })
         .eq("id", applicantId);
 
       if (error) throw error;
 
       toast({ title: "تم تحديث حالة المتطوع" });
-      if (selectedRequest) fetchApplicants(selectedRequest.id);
+      if (selectedFormId) {
+        const { data } = await supabase.from("supply_request_applicants" as any).select("*").eq("form_id", selectedFormId);
+        setApplicants((data as any) || []);
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "فشل التحديث", description: error.message });
     }
   };
 
-  const handleSendToInterviews = async (requestId: string) => {
-    try {
-      const { error } = await supabase
-        .from("volunteer_supply_requests" as any)
-        .update({ status: "sent_to_interviews" })
-        .eq("id", requestId);
-
-      if (error) throw error;
-
-      toast({ title: "تم إرسال القائمة للإدارة الطالبة 🚀", description: "ستظهر الأسماء الآن في قائمة مقابلات الإدارة الطالبة." });
-      await fetchRequests();
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "فشل الإرسال", description: error.message });
-    }
-  };
-
   const copyToClipboard = (requestId: string) => {
-    const linkCode = localStorage.getItem(`link_${requestId}`) || `ERC-VOL-${requestId.substring(0, 4)}`;
+    const uuid = localStorage.getItem(`form_uuid_${requestId}`) || requestId;
     const baseUrl = window.location.origin + window.location.pathname;
-    const fullLink = `${baseUrl}#/register-volunteer/${linkCode}`;
+    const fullLink = `${baseUrl}#/register-volunteer/${uuid}`;
     navigator.clipboard.writeText(fullLink);
-    toast({ title: "تم نسخ الرابط 📋" });
+    toast({ title: "تم نسخ الرابط بنجاح 📋" });
   };
 
   return (
@@ -143,20 +154,21 @@ export default function YouthManagement() {
         <div className="rounded-2xl bg-gradient-to-r from-red-600 to-red-700 p-6 text-white shadow-md flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold">الإدارة المركزية لشؤون التطوع</h2>
-            <p className="text-red-100 text-sm mt-1">توليد روابط الاستمارات الإلكترونية، فلترة المتطوعين، وإرسال الكشوف للإدارات الطالبة.</p>
+            <p className="text-red-100 text-sm mt-1">لوحة إدارة ومطابقة طلبات المتطوعين الميدانية.</p>
           </div>
           <Users className="w-12 h-12 text-red-200/50 hidden md:block" />
         </div>
 
         {loading ? (
           <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-red-600" /></div>
+        ) : requests.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground">لا توجد طلبات إمداد مقدمة حالياً.</Card>
         ) : (
           <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <table className="w-full text-right border-collapse">
               <thead>
                 <tr className="bg-muted text-muted-foreground text-sm font-bold border-b border-border">
                   <th className="p-4">المهمة المطلوبة</th>
-                  <th className="p-4">كود الإدارة</th>
                   <th className="p-4">العدد المطلوب</th>
                   <th className="p-4">الحالة</th>
                   <th className="p-4 text-center">الإجراءات</th>
@@ -164,25 +176,17 @@ export default function YouthManagement() {
               </thead>
               <tbody className="divide-y divide-border">
                 {requests.map((req) => {
-                  const hasLink = req.status !== "pending_youth";
                   return (
                     <tr key={req.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="p-4 font-bold">{req.role_name}</td>
-                      <td className="p-4 text-muted-foreground">{req.department_code}</td>
-                      <td className="p-4 font-mono text-red-600 font-bold">{req.vol_count} متطوع</td>
+                      <td className="p-4 font-bold">{req.role_title}</td>
+                      <td className="p-4 font-mono text-red-600 font-bold">{req.required_count} متطوع</td>
                       <td className="p-4">
-                        {req.status === "pending_youth" && (
-                          <span className="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium border border-amber-200">في الانتظار</span>
-                        )}
-                        {req.status === "link_generated" && (
-                          <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">جمع المتطوعين</span>
-                        )}
-                        {req.status === "sent_to_interviews" && (
-                          <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium border border-blue-200">في المقابلات</span>
-                        )}
+                        <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
+                          {req.status}
+                        </span>
                       </td>
                       <td className="p-4 text-center flex items-center justify-center gap-2">
-                        {!hasLink ? (
+                        {req.status === "pending" ? (
                           <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white" disabled={actionLoading === req.id} onClick={() => handleCreateLink(req.id)}>
                             <Link2 className="w-4 h-4 ml-1" /> توليد الرابط
                           </Button>
@@ -194,13 +198,13 @@ export default function YouthManagement() {
 
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button size="sm" variant="secondary" onClick={() => { setSelectedRequest(req); fetchApplicants(req.id); }}>
+                                <Button size="sm" variant="secondary" onClick={() => fetchApplicants(req.id)}>
                                   <Eye className="w-4 h-4 ml-1" /> المتقدمين
                                 </Button>
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" dir="rtl">
                                 <DialogHeader>
-                                  <DialogTitle>طلبات المتطوعين لـ {req.role_name}</DialogTitle>
+                                  <DialogTitle>طلبات المتطوعين لـ {req.role_title}</DialogTitle>
                                 </DialogHeader>
                                 {applicantsLoading ? (
                                   <div className="flex justify-center p-6"><Loader2 className="h-6 w-6 animate-spin text-red-600" /></div>
@@ -213,28 +217,21 @@ export default function YouthManagement() {
                                         <tr className="border-b font-bold text-muted-foreground">
                                           <th className="p-2">الاسم</th>
                                           <th className="p-2">الهاتف</th>
-                                          <th className="p-2">الـ CV</th>
+                                          <th className="p-2">الحالة</th>
                                           <th className="p-2">التصفية</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {applicants.map((app) => (
                                           <tr key={app.id} className="border-b">
-                                            <td className="p-2 font-medium">{app.full_name}</td>
-                                            <td className="p-2 font-mono">{app.phone}</td>
-                                            <td className="p-2">
-                                              {app.cv_url ? (
-                                                <a href={app.cv_url} target="_blank" rel="noreferrer" className="text-red-600 flex items-center gap-1 hover:underline">
-                                                  <FileText className="w-4 h-4" /> عرض الملف
-                                                </a>
-                                              ) : <span className="text-muted-foreground">غير مرفق</span>}
-                                            </td>
+                                            <td className="p-2 font-medium">{app.applicant_data?.fullName || "غير مسجل"}</td>
+                                            <td className="p-2 font-mono">{app.applicant_data?.phone || "-"}</td>
+                                            <td className="p-2">{app.youth_status}</td>
                                             <td className="p-2 flex gap-1">
-                                              {/* تم تعديل الحجم هنا من xs إلى sm */}
-                                              <Button size="sm" variant={app.youth_status === 'short_listed' ? "default" : "outline"} className={app.youth_status === 'short_listed' ? "bg-green-600 text-white" : ""} onClick={() => handleStatusChange(app.id, 'short_listed')}>
-                                                <Check className="w-3.5 h-3.5" /> المقابلات
+                                              <Button size="sm" variant={app.youth_status === 'approved' ? "default" : "outline"} className={app.youth_status === 'approved' ? "bg-green-600 text-white" : ""} onClick={() => handleStatusChange(app.id, 'approved')}>
+                                                <Check className="w-3.5 h-3.5" /> قبول
                                               </Button>
-                                              <Button size="sm" variant={app.youth_status === 'rejected_by_youth' ? "destructive" : "outline"} onClick={() => handleStatusChange(app.id, 'rejected_by_youth')}>
+                                              <Button size="sm" variant={app.youth_status === 'rejected' ? "destructive" : "outline"} onClick={() => handleStatusChange(app.id, 'rejected')}>
                                                 <X className="w-3.5 h-3.5" /> استبعاد
                                               </Button>
                                             </td>
@@ -242,11 +239,6 @@ export default function YouthManagement() {
                                         ))}
                                       </tbody>
                                     </table>
-                                    {req.status === "link_generated" && (
-                                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white mt-4" onClick={() => handleSendToInterviews(req.id)}>
-                                        تصدير وإرسال المقبولين مبدئيًا للإدارة الطالبة 🚀
-                                      </Button>
-                                    )}
                                   </div>
                                 )}
                               </DialogContent>
