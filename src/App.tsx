@@ -18,6 +18,7 @@ import DataManager from "./pages/DataManager.tsx";
 import Admin from "./pages/Admin.tsx";
 import MissionDetail from "./pages/MissionDetail.tsx";
 import VolunteerSupplyRequest from "./pages/VolunteerSupplyRequest.tsx";
+import YouthManagement from "./pages/YouthManagement";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><Admin /></ProtectedRoute>} />
             <Route path="/missions/:id" element={<ProtectedRoute><MissionDetail /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
+            <Route path="/youth-management" element={<YouthManagement />} />
           </Routes>
         </AuthProvider>
       </HashRouter>
