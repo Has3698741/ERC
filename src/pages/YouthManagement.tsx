@@ -8,9 +8,9 @@ import { Loader2, Link2, Eye, Check, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 interface VolunteerRequest {
-  id: any;
-  role_name: string;
-  vol_count: number;
+  id: string;
+  role_title: string;
+  required_count: number;
   status: string;
   created_at?: string;
 }
@@ -33,33 +33,34 @@ export default function YouthManagement() {
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [loading, setLoading] = useState(true);
   const [applicantsLoading, setApplicantsLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<any | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      // القراءة من الجدول الصحيح والمطابق للـ Schema تماماً
+      // القراءة من الجدول المعتمد الجديد في قاعدة البيانات
       const { data, error } = await supabase
-        .from("volunteer_requests" as any)
-        .select(`id, role_name, vol_count, status, created_at`)
+        .from("volunteer_supply_requests" as any)
+        .select(`id, role_title, required_count, status, created_at`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       setRequests((data as any) || []);
     } catch (error: any) {
+      console.error("Database table syncing...", error.message);
       toast({ variant: "destructive", title: "خطأ في جلب البيانات", description: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchApplicants = async (requestId: any) => {
+  const fetchApplicants = async (requestId: string) => {
     try {
       setApplicantsLoading(true);
       
-      // جلب الـ form_id المرتبط بالطلب
+      // جلب الـ form_id المرتبط بالطلب من الجدول الوسيط
       const { data, error: formError } = await supabase
         .from("supply_request_forms" as any)
         .select("id")
@@ -94,7 +95,7 @@ export default function YouthManagement() {
     fetchRequests();
   }, []);
 
-  const handleCreateLink = async (requestId: any) => {
+  const handleCreateLink = async (requestId: string) => {
     try {
       setActionLoading(requestId);
       const generatedUuid = crypto.randomUUID();
@@ -106,7 +107,7 @@ export default function YouthManagement() {
       if (linkError) throw linkError;
 
       const { error: updateError } = await supabase
-        .from("volunteer_requests" as any)
+        .from("volunteer_supply_requests" as any)
         .update({ status: "approved" })
         .eq("id", requestId);
 
@@ -141,7 +142,7 @@ export default function YouthManagement() {
     }
   };
 
-  const copyToClipboard = (requestId: any) => {
+  const copyToClipboard = (requestId: string) => {
     const uuid = localStorage.getItem(`form_uuid_${requestId}`) || requestId;
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}#/register-volunteer/${uuid}`;
@@ -152,17 +153,15 @@ export default function YouthManagement() {
   return (
     <AppLayout title="إدارة الشباب وتنمية التطوع">
       <div className="space-y-6">
-        <div className="rounded-2xl bg-gradient-to-r from-red-600 to-red-700 p-6 text-white shadow-md flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">الإدارة المركزية لشؤون التطوع</h2>
-            <p className="text-red-100 text-sm mt-1">لوحة إدارة ومطابقة طلبات المتطوعين الميدانية.</p>
-          </div>
+        <div className="rounded-2xl bg-gradient-to-r from-red-600 to-red-700 p-6 text-white shadow-md">
+          <h2 className="text-2xl font-bold">الإدارة المركزية لشؤون التطوع</h2>
+          <p className="text-red-100 text-sm mt-1">منظومة إدارة ومطابقة طلبات المتطوعين الميدانية الحالية.</p>
         </div>
 
         {loading ? (
           <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-red-600" /></div>
         ) : requests.length === 0 ? (
-          <Card className="p-8 text-center text-muted-foreground">لا توجد طلبات إمداد مقدمة حالياً.</Card>
+          <Card className="p-8 text-center text-muted-foreground">لا توجد طلبات إمداد مقدمة حالياً في قاعدة البيانات الجديدة.</Card>
         ) : (
           <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
             <table className="w-full text-right border-collapse">
@@ -178,8 +177,8 @@ export default function YouthManagement() {
                 {requests.map((req) => {
                   return (
                     <tr key={req.id} className="hover:bg-muted/50 transition-colors">
-                      <td className="p-4 font-bold">{req.role_name}</td>
-                      <td className="p-4 font-mono text-red-600 font-bold">{req.vol_count} متطوع</td>
+                      <td className="p-4 font-bold">{req.role_title}</td>
+                      <td className="p-4 font-mono text-red-600 font-bold">{req.required_count} متطوع</td>
                       <td className="p-4">
                         <span className="bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
                           {req.status || "في الانتظار"}
@@ -204,7 +203,7 @@ export default function YouthManagement() {
                               </DialogTrigger>
                               <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto" dir="rtl">
                                 <DialogHeader>
-                                  <DialogTitle>طلبات المتطوعين لـ {req.role_name}</DialogTitle>
+                                  <DialogTitle>طلبات المتطوعين لـ {req.role_title}</DialogTitle>
                                 </DialogHeader>
                                 {applicantsLoading ? (
                                   <div className="flex justify-center p-6"><Loader2 className="h-6 w-6 animate-spin text-red-600" /></div>
