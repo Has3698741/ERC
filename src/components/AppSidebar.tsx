@@ -4,7 +4,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, Home, FilePlus, Radio, Sparkles, ShieldCheck, Users2, BarChart3, Database, Settings, LogOut, UserPlus } from "lucide-react";
+import { Heart, Home, FilePlus, Radio, Sparkles, ShieldCheck, Users2, BarChart3, Database, Settings, LogOut, UserPlus, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROLES, type AppRole } from "@/lib/constants";
 
@@ -19,8 +19,12 @@ const items: NavItem[] = [
   { title: "الرئيسية", url: "/", icon: Home, roles: ["*"] },
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
   
-  // الصفحة الجديدة المعتمدة
+  // الصفحة الجديدة المعتمدة للطلب
   { title: "طلب إمداد بالمتطوعين", url: "/volunteer-supply-request", icon: UserPlus, roles: ["*"] },
+  
+  // 👇 إضافة الإدارة المركزية لشؤون التطوع الجديدة في القائمة
+  { title: "إدارة شؤون التطوع", url: "/youth-management", icon: ShieldAlert, roles: ["admin", "youth_room"] },
+
   { title: "غرفة العمليات", url: "/operations-room", icon: Radio, roles: ["operations_room", "operations_supervisor", "admin"] },
   { title: "الجوكر", url: "/joker", icon: Sparkles, roles: ["joker", "admin"] },
   { title: "مشرف غرفة العمليات", url: "/supervisor", icon: ShieldCheck, roles: ["operations_supervisor", "admin"] },
@@ -36,9 +40,9 @@ export function AppSidebar() {
   const location = useLocation();
   const { roles = [], profile, signOut } = useAuth(); // وضعنا قيمة افتراضية مصفوفة فارغة لحمايتها من الـ undefined
 
-  // 👇 تحديث الفلترة: تم تغيير الرابط لـ /volunteer-supply-request ليطابق الـ items فوق بالظبط
+  // 👇 تحديث الفلترة: تم إبقاء الشروط وإضافة حماية الرابط الجديد ليعمل بسلاسة
   const visible = items.filter((it) => {
-    if (it.url === "/volunteer-supply-request" || it.roles.includes("*")) {
+    if (it.url === "/volunteer-supply-request" || it.url === "/youth-management" || it.roles.includes("*")) {
       return true;
     }
     return Array.isArray(roles) && it.roles.some((r) => roles.includes(r as AppRole));
