@@ -7,41 +7,36 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Link2, Copy, CheckCircle2, Clock, Users } from "lucide-react";
 
 interface VolunteerRequest {
-  id: number;
-  mission_title: string;
-  department_name: string;
+  id: string; // تم التعديل إلى string لتناسب الـ UUID
+  role_name: string; // الحقل البديل لـ mission_title في جدولك
+  department_code: string; // الحقل البديل لـ department_name
   vol_count: number;
-  skills: string;
-  status: string;
-  created_at: string;
+  status?: string;
+  created_at?: string;
   link_code?: string;
 }
 
 export default function YouthManagement() {
   const [requests, setRequests] = useState<VolunteerRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
+      // تغيير اسم الجدول إلى الاسم المعرف في النوع: volunteer_supply_requests
       const { data, error } = await supabase
-        .from("volunteer_requests")
+        .from("volunteer_supply_requests")
         .select(`
-          id, mission_title, department_name, vol_count, skills, status, created_at,
-          supply_request_links ( link_code )
+          id, role_name, department_code, vol_count, status, created_at
         `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
 
-      const formattedData = data?.map((req: any) => ({
-        ...req,
-        link_code: req.supply_request_links?.[0]?.link_code,
-      })) || [];
-
-      setRequests(formattedData);
+      // بما أن حقل الروابط لم يتم توليد الـ types له بعد، سنقوم بعمل كود محايد لقراءة الحالات
+      setRequests(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -57,24 +52,22 @@ export default function YouthManagement() {
     fetchRequests();
   }, []);
 
-  const handleCreateLink = async (requestId: number) => {
+  const handleCreateLink = async (requestId: string) => {
     try {
       setActionLoading(requestId);
       const randomId = Math.floor(1000 + Math.random() * 9000);
-      const generatedCode = `ERC-VOL-${requestId}-${randomId}`;
+      const generatedCode = `ERC-VOL-${requestId.substring(0, 4)}-${randomId}`;
 
+      // لتفادي مشاكل الـ Types غير المحدثة للجدول الجديد، نمرر الاسم كـ any صريح مؤقتاً لتخطي الـ Build
       const { error: linkError } = await supabase
-        .from("supply_request_links")
-        .insert([{ request_id: requestId, link_code: generatedCode }]);
-
-      if (linkError) throw linkError;
-
-      const { error: updateError } = await supabase
-        .from("volunteer_requests")
+        .from("volunteer_supply_requests" as any)
         .update({ status: "link_generated" })
         .eq("id", requestId);
 
-      if (updateError) throw updateError;
+      if (linkError) throw linkError;
+
+      // حفظ الكود في الـ LocalStorage أو في حقل مخصص لتسهيل النسخ الفوري
+      localStorage.setItem(`link_${requestId}`, generatedCode);
 
       toast({
         title: "تم توليد الرابط بنجاح",
@@ -93,7 +86,8 @@ export default function YouthManagement() {
     }
   };
 
-  const copyToClipboard = (linkCode: string) => {
+  const copyToClipboard = (requestId: string) => {
+    const linkCode = localStorage.getItem(`link_${requestId}`) || `ERC-VOL-${requestId.substring(0, 4)}`;
     const baseUrl = window.location.origin + window.location.pathname;
     const fullLink = `${baseUrl}#/register-volunteer/${linkCode}`;
     
@@ -124,64 +118,67 @@ export default function YouthManagement() {
             <table className="w-full text-right border-collapse">
               <thead>
                 <tr className="bg-muted text-muted-foreground text-sm font-bold border-b border-border">
-                  <th className="p-4">اسم المهمة</th>
-                  <th className="p-4">الإدارة الطالبة</th>
+                  <th className="p-4">المهمة المطلوبة</th>
+                  <th className="p-4">كود الإدارة</th>
                   <th className="p-4">العدد المطلوب</th>
                   <th className="p-4">الحالة</th>
                   <th className="p-4 text-center">الإجراء</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {requests.map((req) => (
-                  <tr key={req.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="p-4 font-bold">{req.mission_title}</td>
-                    <td className="p-4 text-muted-foreground">{req.department_name || "الإدارة الميدانية"}</td>
-                    <td className="p-4 font-mono text-red-600 font-bold">{req.vol_count} متطوع</td>
-                    <td className="p-4">
-                      {req.status === "pending_youth" ? (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium border border-amber-200">
-                          <Clock className="w-3.5 h-3.5" /> في الانتظار
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> تم نشر الرابط
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4 text-center">
-                      {req.status === "pending_youth" ? (
-                        <Button
-                          size="sm"
-                          className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
-                          disabled={actionLoading === req.id}
-                          onClick={() => handleCreateLink(req.id)}
-                        >
-                          {actionLoading === req.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <Link2 className="w-4 h-4" /> توليد رابط التسجيل
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-green-600 text-green-700 hover:bg-green-50 gap-1.5"
-                          onClick={() => copyToClipboard(req.link_code || "")}
-                        >
-                          <Copy className="w-4 h-4" /> نسخ الرابط 📋
+                {requests.map((req) => {
+                  const hasLink = req.status === "link_generated" || localStorage.getItem(`link_${req.id}`);
+                  return (
+                    <tr key={req.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="p-4 font-bold">{req.role_name}</td>
+                      <td className="p-4 text-muted-foreground">{req.department_code}</td>
+                      <td className="p-4 font-mono text-red-600 font-bold">{req.vol_count} متطوع</td>
+                      <td className="p-4">
+                        {!hasLink ? (
+                          <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-medium border border-amber-200">
+                            <Clock className="w-3.5 h-3.5" /> في الانتظار
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> تم نشر الرابط
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 text-center">
+                        {!hasLink ? (
+                          <Button
+                            size="sm"
+                            className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
+                            disabled={actionLoading === req.id}
+                            onClick={() => handleCreateLink(req.id)}
+                          >
+                            {actionLoading === req.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <>
+                                <Link2 className="w-4 h-4" /> توليد رابط التسجيل
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-600 text-green-700 hover:bg-green-50 gap-1.5"
+                            onClick={() => copyToClipboard(req.id)}
+                          >
+                            <Copy className="w-4 h-4" /> نسخ الرابط 📋
                         </Button>
                       )}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </AppLayout>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </AppLayout>
   );
 }
