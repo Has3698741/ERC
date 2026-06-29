@@ -18,9 +18,7 @@ interface NavItem {
 const items: NavItem[] = [
   { title: "الرئيسية", url: "/", icon: Home, roles: ["*"] },
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
-  
   // الصفحات الجديدة للطلبات ومتابعتها
-  { title: "طلب إمداد جديد", url: "/new-volunteer-request", icon: FilePlus, roles: ["*"] },
   { title: "متابعة طلبات الإمداد", url: "/volunteer-supply-request", icon: UserPlus, roles: ["*"] },
   
   // 👇 إضافة الإدارة المركزية لشؤون التطوع الجديدة في القائمة
