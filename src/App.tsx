@@ -41,8 +41,6 @@ const App = () => (
             
             {/* السيستم المتكامل لطلب الإمداد ומتابعة الحالات والمقابلات */}
             <Route path="/volunteer-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
-            <Route path="/new-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
-            
             <Route path="/dashboard" element={<ProtectedRoute roles={["stakeholder", "data_manager"]}><Dashboard /></ProtectedRoute>} />
             <Route path="/data-manager" element={<ProtectedRoute roles={["data_manager"]}><DataManager /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><Admin /></ProtectedRoute>} />
