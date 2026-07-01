@@ -4,7 +4,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
-import { Heart, Home, FilePlus, Radio, Sparkles, ShieldCheck, Users2, BarChart3, Database, Settings, LogOut, UserPlus, ShieldAlert } from "lucide-react";
+import { Heart, Home, FilePlus, Radio, Sparkles, ShieldCheck, Users2, BarChart3, Database, Settings, LogOut, UserPlus, ShieldAlert, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROLES, type AppRole } from "@/lib/constants";
 
@@ -18,10 +18,14 @@ interface NavItem {
 const items: NavItem[] = [
   { title: "الرئيسية", url: "/", icon: Home, roles: ["*"] },
   { title: "إدخال مهمة جديدة", url: "/department-entry", icon: FilePlus, roles: ["department_entry", "admin"] },
-  // الصفحات الجديدة للطلبات ومتابعتها
+  
+  // السيستم المتكامل لطلب الإمداد ومتابعة الحالات والمقابلات
   { title: "متابعة طلبات الإمداد", url: "/volunteer-supply-request", icon: UserPlus, roles: ["*"] },
   
-  // 👇 إضافة الإدارة المركزية لشؤون التطوع الجديدة في القائمة
+  // 👇 الرابط الجديد للمرحلة الثالثة: المقابلات واختيار المتطوعين للإدارة الطالبة
+  { title: "المقابلات والاختيار", url: "/department-interviews", icon: UserCheck, roles: ["*"] },
+  
+  // إضافة الإدارة المركزية لشؤون التطوع الجديدة في القائمة
   { title: "إدارة شؤون التطوع", url: "/youth-management", icon: ShieldAlert, roles: ["admin", "youth_room"] },
 
   { title: "غرفة العمليات", url: "/operations-room", icon: Radio, roles: ["operations_room", "operations_supervisor", "admin"] },
@@ -37,11 +41,16 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
-  const { roles = [], profile, signOut } = useAuth(); // وضعنا قيمة افتراضية مصفوفة فارغة لحمايتها من الـ undefined
+  const { roles = [], profile, signOut } = useAuth(); // قيمة افتراضية مصفوفة فارغة لحمايتها من الـ undefined
 
-  // 👇 تحديث الفلترة: تم إبقاء الشروط وإضافة حماية الرابط الجديد ليعمل بسلاسة
+  // 👇 تحديث الفلترة: تم تمديد الشرط ليشمل الرابط الجديد الخاص بالمقابلات بسلاسة
   const visible = items.filter((it) => {
-    if (it.url === "/volunteer-supply-request" || it.url === "/youth-management" || it.roles.includes("*")) {
+    if (
+      it.url === "/volunteer-supply-request" || 
+      it.url === "/department-interviews" || 
+      it.url === "/youth-management" || 
+      it.roles.includes("*")
+    ) {
       return true;
     }
     return Array.isArray(roles) && it.roles.some((r) => roles.includes(r as AppRole));

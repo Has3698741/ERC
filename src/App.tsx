@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Route, Routes } from "react-router-dom"; // 👇 غيرناها لـ HashRouter
+import { HashRouter, Route, Routes } from "react-router-dom"; // استخدام الـ HashRouter مباشرة بيحل كل مشاكل الـ 404 على GitHub Pages
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +19,7 @@ import Admin from "./pages/Admin.tsx";
 import MissionDetail from "./pages/MissionDetail.tsx";
 import VolunteerSupplyRequest from "./pages/VolunteerSupplyRequest.tsx";
 import YouthManagement from "./pages/YouthManagement";
+import DepartmentInterviews from "./pages/DepartmentInterviews.tsx"; 
 
 const queryClient = new QueryClient();
 
@@ -27,7 +28,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner position="top-center" richColors closeButton />
-      {/* 👇 استخدام الـ HashRouter مباشرة بيحل كل مشاكل الـ 404 على GitHub Pages */}
+      
       <HashRouter>
         <AuthProvider>
           <Routes>
@@ -38,15 +39,14 @@ const App = () => (
             <Route path="/joker" element={<ProtectedRoute roles={["joker"]}><Joker /></ProtectedRoute>} />
             <Route path="/supervisor" element={<ProtectedRoute roles={["operations_supervisor"]}><Supervisor /></ProtectedRoute>} />
             <Route path="/youth" element={<ProtectedRoute roles={["youth_room"]}><Youth /></ProtectedRoute>} />
-            
-            {/* السيستم المتكامل لطلب الإمداد ומتابعة الحالات والمقابلات */}
             <Route path="/volunteer-supply-request" element={<ProtectedRoute><VolunteerSupplyRequest /></ProtectedRoute>} />
+            <Route path="/department-interviews" element={<ProtectedRoute><DepartmentInterviews /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute roles={["stakeholder", "data_manager"]}><Dashboard /></ProtectedRoute>} />
             <Route path="/data-manager" element={<ProtectedRoute roles={["data_manager"]}><DataManager /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute roles={["admin"]}><Admin /></ProtectedRoute>} />
             <Route path="/missions/:id" element={<ProtectedRoute><MissionDetail /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
             <Route path="/youth-management" element={<YouthManagement />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
       </HashRouter>
